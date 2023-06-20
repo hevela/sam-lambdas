@@ -110,5 +110,5 @@ Outputs:
     Description: First Lambda Function ARN
     Value: !GetAtt HelloWorldFunction.Arn
   HelloWorldFunctionIamRole:
-    Description: Implicit IAM Role created for Hello World function
-    Value: !GetAtt HelloWorldFunctionRole.Arn
+    Description: Explicit IAM Role created for Hello World function
+    Value: !GetAtt HelloLambdaRole.Arn
