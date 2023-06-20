@@ -1,64 +1,49 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
-	"net/http/httptest"
+	"context"
 	"testing"
 
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestHandler(t *testing.T) {
-	t.Run("Unable to get IP", func(t *testing.T) {
-		DefaultHTTPGetAddress = "http://127.0.0.1:12345"
+	testCases := []struct {
+		testName    string
+		token       string
+		expectError bool
+	}{
+		{
+			testName:    "authorized",
+			token:       "Bearer test_token",
+			expectError: false,
+		},
+		{
+			testName:    "no token provided",
+			token:       "",
+			expectError: true,
+		},
+		{
+			testName:    "no bearer token",
+			token:       "no-bearer token",
+			expectError: true,
+		},
+	}
 
-		_, err := handler(events.APIGatewayProxyRequest{})
-		if err == nil {
-			t.Fatal("Error failed to trigger with an invalid request")
-		}
-	})
+	for _, tt := range testCases {
+		t.Run(tt.testName, func(t *testing.T) {
+			req := events.APIGatewayCustomAuthorizerRequest{
+				AuthorizationToken: tt.token,
+				MethodArn:          "testARN",
+			}
 
-	t.Run("Non 200 Response", func(t *testing.T) {
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(500)
-		}))
-		defer ts.Close()
-
-		DefaultHTTPGetAddress = ts.URL
-
-		_, err := handler(events.APIGatewayProxyRequest{})
-		if err != nil && err.Error() != ErrNon200Response.Error() {
-			t.Fatalf("Error failed to trigger with an invalid HTTP response: %v", err)
-		}
-	})
-
-	t.Run("Unable decode IP", func(t *testing.T) {
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(500)
-		}))
-		defer ts.Close()
-
-		DefaultHTTPGetAddress = ts.URL
-
-		_, err := handler(events.APIGatewayProxyRequest{})
-		if err == nil {
-			t.Fatal("Error failed to trigger with an invalid HTTP response")
-		}
-	})
-
-	t.Run("Successful Request", func(t *testing.T) {
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(200)
-			fmt.Fprintf(w, "127.0.0.1")
-		}))
-		defer ts.Close()
-
-		DefaultHTTPGetAddress = ts.URL
-
-		_, err := handler(events.APIGatewayProxyRequest{})
-		if err != nil {
-			t.Fatal("Everything should be ok")
-		}
-	})
+			_, err := handleRequest(context.TODO(), req)
+			if tt.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
 }
