@@ -18,7 +18,7 @@ jobs:
           aws-region: us-east-1
           role-duration-seconds: 1800
           role-skip-session-tagging: true
-          role-to-assume: arn:aws:iam::269174633178:role/aws-sam-cli-managed-dev-p-CloudFormationExecutionR-830GQUQ9J19P
+          role-to-assume: arn:aws:iam::269174633178:role/aws-sam-cli-managed-dev-pipe-PipelineExecutionRole-1TGFGMZ8QQ4DO
       - uses: actions/setup-go@v2
         with:
           go-version: '1.20'
@@ -37,4 +37,4 @@ jobs:
           done
       - run: sam build
       # Prevent prompts and failure when the stack is unchanged
-      - run: sam deploy --no-confirm-changeset --no-fail-on-empty-changeset
+      - run: sam deploy --no-confirm-changeset --no-fail-on-empty-changeset --role-arn arn:aws:iam::269174633178:role/aws-sam-cli-managed-dev-p-CloudFormationExecutionR-830GQUQ9J19P
