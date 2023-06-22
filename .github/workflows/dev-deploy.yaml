@@ -37,4 +37,4 @@ jobs:
           done
       - run: sam build
       # Prevent prompts and failure when the stack is unchanged
-      - run: sam deploy --no-confirm-changeset --no-fail-on-empty-changeset --stack-name sam-lambdas
+      - run: sam deploy --no-confirm-changeset --no-fail-on-empty-changeset --stack-name sam-lambdas --resolve-s3 --capabilities CAPABILITY_IAM --region us-east-1
