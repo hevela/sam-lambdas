@@ -1,0 +1,40 @@
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read # This is required for actions/checkout
+on:
+  push:
+    branches:
+      - main
+jobs:
+  deploy-dev:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+      - uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-region: us-east-1
+          role-duration-seconds: 1800
+          role-skip-session-tagging: true
+          role-to-assume: arn:aws:iam::269174633178:role/aws-sam-cli-managed-dev-pipe-PipelineExecutionRole-1TGFGMZ8QQ4DO
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.20'
+      - run: |
+          # Define a list of folders (lambda_folder/code_folder) to run go mod tidy in.
+          folders=(
+            "lambda-authorizer/authorizer"
+            "hello-lambda/hello-world"
+          )
+          # Loop through each folder and run 'go mod tidy'
+          for folder in "${folders[@]}"; do
+            echo "Running 'go mod tidy' in $folder"
+            cd $folder
+            go mod tidy -go=1.20
+            cd ../..
+          done
+      - run: sam build
+      # Prevent prompts and failure when the stack is unchanged
+      - run: sam deploy --no-confirm-changeset --no-fail-on-empty-changeset
